@@ -1,5 +1,13 @@
 #include <libssh2_ruby.h>
 
+struct channel_forwardable {
+  LIBSSH2_LISTENER *listener;
+  LIBSSH2_CHANNEL *channel 
+};
+
+struct channel_forwardable ChannelForward;
+
+
 /*
  * Increases the reference counter on the ruby session container.
  * */
@@ -200,12 +208,47 @@ userauth_publickey_fromfile(VALUE self,
     HANDLE_LIBSSH2_RESULT(result);
 }
 
+
+static VALUE channel_forward_listen_ex(VALUE self,
+                          VALUE rb_host, VALUE rb_port,
+                          VALUE rb_bound_port) {
+  LIBSSH2_SESSION *session = get_session(self);
+  //LIBSSH2_LISTENER *listener = NULL;
+
+
+  char *host = RSTRING_PTR(rb_host);
+  //char *host = RSTRING(rb_host)->ptr;
+
+  unsigned int port = NUM2UINT(rb_bound_port);
+  int bound_port = NUM2INT(rb_bound_port);
+  int *tmp = &bound_port;
+  //int *bound_port = NUM2INT(rb_bound_port);
+
+
+  ChannelForward.listener = libssh2_channel_forward_listen_ex(session, host, port, tmp, 1);
+  return Qnil;
+}
+
+static VALUE channel_forward_accept()
+{
+  ChannelForward.channel = libssh2_channel_forward_accept(ChannelForward.listener);
+  return Qnil;
+}
+
+static VALUE start_forward_loop(VALUE self,
+                                VALUE rb_host, VALUE rb_port,
+                                VALUE rb_bound_port) {
+  channel_forward_listen_ex(self, rb_host, rb_port, rb_bound_port);
+  channel_forward_accept();
+}
+
 void init_libssh2_session() {
     VALUE cSession = rb_cLibSSH2_Native_Session;
     rb_define_alloc_func(cSession, allocate);
     rb_define_method(cSession, "initialize", initialize, 0);
     rb_define_method(cSession, "block_directions", block_directions, 0);
     rb_define_method(cSession, "handshake", handshake, 1);
+    rb_define_method(cSession, "start_forward_loop", start_forward_loop, 3);
     rb_define_method(cSession, "set_blocking", set_blocking, 1);
     rb_define_method(cSession, "userauth_authenticated", userauth_authenticated, 0);
     rb_define_method(cSession, "userauth_password", userauth_password, 2);

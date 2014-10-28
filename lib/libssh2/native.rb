@@ -39,6 +39,7 @@ module LibSSH2
     proxy_method :userauth_authenticated, Native::Session
     proxy_method :userauth_password, Native::Session
     proxy_method :userauth_publickey_fromfile, Native::Session
+    proxy_method :start_forward_loop, Native::Session
 
     #----------------------------------------------------------------
     # Channel Methods
@@ -53,6 +54,7 @@ module LibSSH2
     proxy_method :channel, :get_exit_status, Native::Channel
     proxy_method :channel, :read, Native::Channel
     proxy_method :channel, :read_ex, Native::Channel
+    #proxy_method :channel, :channel_forward_listen_ex, Native::Channel
     proxy_method :channel, :wait_closed, Native::Channel
   end
 end
